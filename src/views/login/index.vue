@@ -36,9 +36,9 @@
 </template>
 
 <script>
-import './gt.js';
+import './gt.js'
 
-import '@/assets/iconfont/iconfont.css';
+import '@/assets/iconfont/iconfont.css'
 
 export default {
   name: '',
@@ -46,14 +46,14 @@ export default {
   data () {
     var xieyiTest = function (rule, value, callback) {
       value ? callback() : callback(new Error('请遵守协议！'))
-    };
+    }
 
     return {
       isLoading: false,
 
       loginForm: {
         capObj: null,
-        mobile: '13911111111',
+        mobile: '18435925122',
         code: '246810',
         xieyi: true
       },

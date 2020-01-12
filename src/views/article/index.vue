@@ -19,14 +19,7 @@
             <el-radio v-model="searchForm.status" label="4">已删除</el-radio>
           </el-form-item>
           <el-form-item label="频道列表：">
-            <el-select v-model="searchForm.channel_id" placeholder="请选择" clearable>
-              <el-option
-                v-for="item in channelList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              ></el-option>
-            </el-select>
+           <channel @slt="selectHandler"></channel>
           </el-form-item>
           <el-form-item label="时间选择：">
             <el-date-picker
@@ -66,8 +59,20 @@
         </el-table-column>
         <el-table-column prop="pubdate" label="发布时间"></el-table-column>
         <el-table-column label="操作">
-          <el-button type="primary" size="mini" icon="el-icon-edit">修改</el-button>
-          <el-button type="danger" size="mini" icon="el-icon-delete">删除</el-button>
+          <template slot-scope="stData">
+            <el-button
+              type="primary"
+              size="mini"
+              icon="el-icon-edit"
+              @click="$router.push('/articleedit/'+stData.row.id)"
+            >修改</el-button>
+            <el-button
+              type="danger"
+              size="mini"
+              icon="el-icon-delete"
+              @click="del(stData.row.id)"
+            >删除</el-button>
+          </template>
         </el-table-column>
       </el-table>
       <el-pagination
@@ -84,8 +89,12 @@
 </template>
 
 <script>
+import Channel from '@/components/channel.vue'
 export default {
   name: 'Article',
+  components: {
+    Channel
+  },
   watch: {
     searchForm: {
       handler: function (newV, oldV) {
@@ -98,16 +107,16 @@ export default {
         this.searchForm.begin_pubdate = newV[0]
         this.searchForm.end_pubdate = newV[1]
       } else {
-        this.searchForm.begin_pubdate = '';
-        this.searchForm.end_pubdate = '';
+        this.searchForm.begin_pubdate = ''
+        this.searchForm.end_pubdate = ''
       }
+      this.getArticleList()
     }
   },
   data () {
     return {
       articleList: [],
       tot: 0,
-      channelList: [],
       timetotime: '',
       // 搜索表单数据对象
       searchForm: {
@@ -121,10 +130,33 @@ export default {
     }
   },
   created () {
-    this.getChannelList()
     this.getArticleList()
   },
   methods: {
+    selectHandler (id) {
+      this.searchForm.channel_id = id
+    },
+    del (id) {
+      this.$confirm('确认要删除该文章么?', '删除', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => {
+          let pro = this.$http({
+            url: '/mp/v1_0/articles/' + id,
+            method: 'delete'
+          })
+          pro
+            .then(result => {
+              this.getArticleList()
+            })
+            .catch(err => {
+              return this.$message.error('删除文章失败：' + err)
+            })
+        })
+        .catch(() => {})
+    },
     handleSizeChange (val) {
       this.searchForm.per_page = val
     },
@@ -150,19 +182,6 @@ export default {
         })
         .catch(err => {
           return this.$message.error('获得文章失败：' + err)
-        })
-    },
-    getChannelList () {
-      let pro = this.$http({
-        url: '/mp/v1_0/channels',
-        method: 'get'
-      })
-      pro
-        .then(result => {
-          this.channelList = result.data.data.channels
-        })
-        .catch(err => {
-          return this.$message.error('获得频道失败：' + err)
         })
     }
   }
