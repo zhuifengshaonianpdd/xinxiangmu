@@ -19,15 +19,49 @@
           <el-radio :label="0">无图</el-radio>
           <el-radio :label="-1">自动</el-radio>
         </el-radio-group>
+        <ul>
+          <!-- 把item序号信息当做参数传递给showDialog,可以获得到的信息分别为 1 2 3 -->
+          <li class="uploadbox" v-for="item in covernum" :key="item" @click="showDialog(item)">
+            <span>点击图标选择图片</span>
+            <img v-if="editForm.cover.images[item-1]" :src="editForm.cover.images[item-1]" alt>
+            <div v-else class="el-icon-picture-outline"></div>
+          </li>
+        </ul>
       </el-form-item>
+
       <el-form-item label="频道" prop="channel_id">
+        <!-- 当前父组件把channel_id信息当做参数传递给channel子组件 -->
         <channel :chid="editForm.channel_id" @slt="selectHandler"></channel>
       </el-form-item>
+
       <el-form-item>
         <el-button type="primary" @click="editarticle(false)">修改</el-button>
         <el-button @click="editarticle(true)">存入草稿</el-button>
       </el-form-item>
     </el-form>
+
+    <!-- @close是对话框的关闭事件，任何条件关闭对话框，都会执行该事件 -->
+    <el-dialog title="提示" :visible.sync="dialogVisible" width="60%" @close="clearImage">
+      <!-- 标签切换效果 -->
+      <el-tabs v-model="activeName" type="card">
+        <el-tab-pane label="素材库" name="first">
+          <!-- 素材图片列表展示 -->
+          <ul>
+            <li class="image-box" v-for="item in imageList" :key="item.id">
+              <img :src="item.url" alt="没有图片" @click="clkImage">
+            </li>
+          </ul>
+        </el-tab-pane>
+        <el-tab-pane label="上传图片" name="second">
+          <el-button type="primary">上传图片</el-button>
+        </el-tab-pane>
+      </el-tabs>
+
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="imageOK">确 定</el-button>
+      </span>
+    </el-dialog>
   </el-card>
 </template>
 
@@ -50,16 +84,25 @@ export default {
   },
   data () {
     return {
-      // 修改文章表单数据对象
+      xu: 0,
+      materialUrl: '',
+      activeName: 'first',
+      querycdt: {
+        collect: false,
+        page: 1,
+        per_page: 12
+      },
+      imageList: [],
+      dialogVisible: false,
       editForm: {
-        title: '', // 文章标题
-        content: '', // 文章内容
+        title: '',
+        content: '',
         // 文章封面
         cover: {
-          type: 0, // 封面类型 -1:自动，0-无图，1-1张，3-3张
-          images: [] // 封面图片 路径名集合
+          type: 0,
+          images: []
         },
-        channel_id: '' // 频道
+        channel_id: ''
       },
       // 表单校验规则
       editFormRules: {
@@ -80,13 +123,61 @@ export default {
   created () {
     // 获得频道
     this.getArticleById()
+    this.getImageList()
   },
   computed: {
     aid () {
       return this.$route.params.aid
+    },
+    covernum () {
+      if (this.editForm.cover.type > 0) {
+        return this.editForm.cover.type
+      }
+      return 0
     }
   },
   methods: {
+    clearImage () {
+      let lis = document.querySelectorAll('.image-box')
+      for (var i = 0; i < lis.length; i++) {
+        lis[i].style.border = ''
+      }
+      this.materialUrl = ''
+    },
+    imageOK () {
+      if (this.materialUrl) {
+        this.editForm.cover.images[this.xu] = this.materialUrl
+        this.dialogVisible = false // 关闭对话框
+      } else {
+        this.$message.error('咋地，一个都没有相中！')
+      }
+    },
+    clkImage (evt) {
+      let lis = document.querySelectorAll('.image-box')
+      for (var i = 0; i < lis.length; i++) {
+        lis[i].style.border = ''
+      }
+      evt.target.parentNode.style.border = '3px solid red'
+      this.materialUrl = evt.target.src
+    },
+    getImageList () {
+      let pro = this.$http({
+        url: '/mp/v1_0/user/images',
+        method: 'get',
+        params: this.querycdt
+      })
+      pro
+        .then(result => {
+          this.imageList = result.data.data.results
+        })
+        .catch(err => {
+          return this.$message.error('获得图片列表失败：' + err)
+        })
+    },
+    showDialog (n) {
+      this.xu = n - 1
+      this.dialogVisible = true
+    },
     selectHandler (id) {
       this.searchForm.channel_id = id
     },
@@ -99,7 +190,6 @@ export default {
       pro
         .then(result => {
           this.editForm = result.data.data
-          //   console.log(result)
         })
         .catch(err => {
           return this.$message.error('获取文章失败：' + err)
@@ -123,7 +213,6 @@ export default {
         pro
           .then(result => {
             this.$message.success('修改文章成功！')
-            // console.log(result)
             // 跳转到列表页面
             this.$router.push({ name: 'article' })
           })
@@ -146,5 +235,48 @@ export default {
 .quill-editor /deep/ .ql-editor {
   height: 200px;
 }
-// 上述样式解析完毕：.quill-editor[data-v-494db270] .ql-editor{height:200px;}
+.image-box {
+  list-style: none;
+  width: 200px;
+  height: 140px;
+  background-color: #fff;
+  margin: 10px;
+  float: left;
+  border: 1px solid #eee;
+  cursor: pointer;
+  box-sizing: border-box;
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+.uploadbox {
+  list-style: none;
+  width: 200px;
+  height: 200px;
+  margin: 10px;
+  float: left;
+  cursor: pointer;
+  border: 1px solid #eee;
+  span {
+    width: 200px;
+    height: 50px;
+    line-height: 50px;
+    display: block;
+    text-align: center;
+  }
+  div {
+    width: 200px;
+    height: 150px;
+    font-size: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+  }
+  img {
+    width: 200px;
+    height: 150px;
+  }
+}
 </style>

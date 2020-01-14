@@ -88,7 +88,6 @@ export default {
         })
         pro
           .then(result => {
-            console.log(result)
             let { data } = result.data
             window.initGeetest(
               {
@@ -126,7 +125,6 @@ export default {
       })
       pro
         .then(result => {
-          // console.log(result) // 【data】  status statusText headers config request
           // 客户端浏览器把服务器端返回的秘钥等相关信息通过 sessionStorage 做记录，表明是登录状态
           window.sessionStorage.setItem(
             'userinfo',
@@ -137,7 +135,6 @@ export default {
         })
         .catch(err => {
           // 通过弹出框把错误显示出来
-          // console.log('手机号码或验证码错误:' + err)
           // this.$message({
           //   type: 'error',
           //   message: '手机号码或验证码错误:' + err,

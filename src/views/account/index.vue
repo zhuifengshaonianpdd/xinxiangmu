@@ -111,7 +111,6 @@ export default {
         })
         pro
           .then(result => {
-            // console.log(result)
             // 成功提示
             bus.$emit('upAccountName', this.accountForm.name)
             this.$message.success('更新成功！')
@@ -128,7 +127,6 @@ export default {
       })
       pro
         .then(result => {
-          // console.log(result)
           // 把获得好的账户信息赋予给 accountForm
           this.accountForm = result.data.data
         })

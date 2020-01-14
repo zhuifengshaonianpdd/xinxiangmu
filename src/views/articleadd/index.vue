@@ -21,9 +21,10 @@
             </el-radio-group>
             <ul>
                   <li class="uploadbox" v-for="item in covernum" :key="item"
-                  @click="showDialog()">
+                  @click="showDialog(item)">
                       <span>点击图标选择图片</span>
-                      <div class="el-icon-picture-outline"></div>
+                      <img v-if="addForm.cover.images[item-1]" :src="addForm.cover.images[item-1]" alt="" >
+                      <div v-else class="el-icon-picture-outline"></div>
                   </li>
               </ul>
           </el-form-item>
@@ -35,7 +36,7 @@
             <el-button @click="addarticle(true)">存入草稿</el-button>
           </el-form-item>
         </el-form>
-         <el-dialog title="提示" :visible.sync="dialogVisible" width="60%">
+         <el-dialog title="素材图片" :visible.sync="dialogVisible" width="60%" @close="clearImage">
           <!-- 标签切换效果 -->
           <el-tabs v-model="activeName" type="card">
           <el-tab-pane label="素材库" name="first">
@@ -53,7 +54,7 @@
 
   <span slot="footer" class="dialog-footer">
     <el-button @click="dialogVisible = false">取 消</el-button>
-    <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
+    <el-button type="primary" @click="imageOK">确 定</el-button>
   </span>
 </el-dialog>
       </div>
@@ -70,20 +71,14 @@ import { quillEditor } from 'vue-quill-editor'
 // 引入富文本编辑器
 export default {
   name: 'ArticleAdd',
-  computed: {
-    covernum () {
-      if (this.addForm.cover.type > 0) {
-        return this.addForm.cover.type
-      }
-      return 0
-    }
-  },
   components: {
     quillEditor,
     Channel
   },
   data () {
     return {
+      materialUrl: '',
+      xu: 0,
       dialogVisible: false,
       activeName: 'first',
       imageList: [],
@@ -118,14 +113,37 @@ export default {
   created () {
     this.getImageList()
   },
+  computed: {
+    covernum () {
+      if (this.addForm.cover.type > 0) {
+        return this.addForm.cover.type
+      }
+      return 0
+    }
+  },
   methods: {
+    clearImage () {
+      let lis = document.querySelectorAll('.image-box')
+      for (var i = 0; i < lis.length; i++) {
+        lis[i].style.border = ''
+      }
+      this.materialUrl = ''
+    },
+    imageOK () {
+      if (this.materialUrl) {
+        this.addForm.cover.images[this.xu] = this.materialUrl
+        this.dialogVisible = false
+      } else {
+        this.$message.error('咋地，一个都没有相中！')
+      }
+    },
     clkImage (evt) {
       let lis = document.querySelectorAll('.image-box')
       for (var i = 0; i < lis.length; i++) {
         lis[i].style.border = ''
       }
-      let nowli = evt.target.parentNode
-      nowli.style.border = '5px solid orange'
+      evt.target.parentNode.style.border = '3px solid red'
+      this.materialUrl = evt.target.src
     },
     getImageList () {
       let pro = this.$http({
@@ -141,7 +159,8 @@ export default {
           return this.$message.error('获得图片列表失败：' + err)
         })
     },
-    showDialog () {
+    showDialog (n) {
+      this.xu = n - 1
       this.dialogVisible = true
     },
     selectHandler (id) {
